@@ -1,0 +1,46 @@
+Same AI call as the analysis (no extra cost)
+   │
+   ▼
+LogoAnalysis.similarity
+   { match_level: "...", recognized_brand: "..." or null, notes: [...] }
+   │
+   ▼
+get_logo_status(analysis)            ← service.py (entry point)
+   │
+   ▼
+status_from_similarity(similarity)   ← ai_checker.py
+   │
+   │  clean the brand name ("   " → no brand)
+   │
+   ├── exact_or_near_exact  AND  brand known
+   │        → "Matches a known logo"
+   │          "This appears to be, or closely match, the Google logo."
+   │
+   ├── exact_or_near_exact (no brand)  OR  strong_similarity
+   │        → "Potentially similar logo detected"
+   │          "Your logo looks visually similar to the Nike logo
+   │           (or: an existing well-known logo). Consider reviewing it before use."
+   │
+   ├── generic_elements
+   │        → "Uses common design elements"
+   │          "...found in many logos. This is normal and does not mean it was copied."
+   │          (brand name hidden)
+   │
+   └── none
+            → "No significant similarity detected"
+              "We did not find a close match with well-known logos."
+              (brand name hidden)
+   │
+   ▼
+LogoStatus
+   {
+     status, title, message,
+     recognized_brand,          ← only for strong / exact matches
+     notes,                     ← AI's short factual observations
+     sources_checked: ["AI visual recognition of well-known logos"],
+     disclaimer: "This is an automated visual check against well-known logos.
+                  It is not a trademark search or legal advice."
+   }
+   │
+   ▼
+Dashboard → "Logo Status" section (first section)

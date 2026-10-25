@@ -1,0 +1,40 @@
+Startup (once, in main.py later)
+   │
+   ▼
+factory.py  create_provider(settings)
+   │   key empty?   → AIConfigError "GEMINI_API_KEY is not set"  (app won't start)
+   │   model empty? → AIConfigError "GEMINI_MODEL is not set"
+   ▼
+GeminiProvider ready  (timeout 30 s, 3 attempts, temperature 0.2)
+
+
+Every analysis request
+   │
+   ▼
+generate_json(prompt, schema, image_png)
+   │
+   ▼
+1. Build the request
+   │   contents = [image (PNG), prompt]     ← or just [prompt] for text-only
+   │   config   = JSON output + follow this schema + temperature 0.2
+   ▼
+2. Send to Gemini  ───────────────────────────────►  Google
+   │                                                    │
+   │   ◄── 503 / 500 / timeout / no connection ─────────┤
+   │        SDK waits (1s, 2s…) and retries,            │
+   │        up to 3 attempts total                      │
+   │                                                    │
+   │   ◄── answer ──────────────────────────────────────┘
+   ▼
+3. Check what came back
+   │
+   ├── 429 quota used up        → AIRateLimited  (not retried, saves quota)
+   ├── 400/401/403/404          → AIConfigError  (bad key / wrong model)
+   ├── still failing after 3    → AIUnavailable
+   ├── empty / blocked / cut off→ AIBadResponse
+   │
+   ▼ OK
+4. Log "AI response from gemini-3.8-flash in 2.3s"
+   │
+   ▼
+Return raw JSON text  → caller (analysis module) parses + validates it

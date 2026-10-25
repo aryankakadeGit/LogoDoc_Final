@@ -1,0 +1,39 @@
+                    APP STARTS (main.py, later)
+                              │
+          ┌───────────────────┴───────────────────┐
+          ▼                                       ▼
+   CONFIG (config.py)                     LOGGING (logging.py)
+          │                                       │
+          ▼                                       │
+ Read backend/.env                                │
+ + Windows environment variables                  │
+          │                                       │
+          ▼                                       │
+ Empty value? ──yes──► use default                │
+ (MAX_UPLOAD_MB= → 5)                             │
+          │                                       │
+          ▼                                       │
+ Check every value                                │
+   MAX_UPLOAD_MB > 0?                             │
+   LOG_LEVEL valid?                               │
+   RATE_LIMIT like "10/minute"?                   │
+   AI_PROVIDER = gemini?                          │
+          │                                       │
+   bad ──► STOP app with clear error              │
+          │ good                                  │
+          ▼                                       │
+ Settings object (made once, cached)              │
+   max_upload_bytes = 5 MB                        │
+   max_image_dimension = 2048                     │
+   gemini_api_key = ********** (hidden)           │
+   log_level = INFO ──────────────────────────────►
+                                                  ▼
+                                    setup_logging("INFO")
+                                      • one format for all lines:
+                                        time  LEVEL  module  message
+                                      • hide levels below INFO
+                                      • silence httpx request noise
+                                                  │
+          ┌───────────────────────────────────────┘
+          ▼
+   APP READY → every module now uses both

@@ -1,0 +1,34 @@
+PreparedImage (clean PNG from upload)
+   │
+   ▼
+1. prompts.py        ANALYSIS_PROMPT  (built from the 11 parameters)
+   │
+   ▼
+2. ai.generate_json(prompt, AIAnalysisResponse schema, image)   ← ONE AI call
+   │
+   ▼
+3. response_parser   Is the answer valid?
+   │     ├── not JSON?
+   │     ├── a parameter missing?
+   │     ├── score 17 / -1 / "eight"?
+   │     ├── empty point / too long?
+   │     └── logo but no scores?
+   │
+   ├── INVALID ──► retry the AI call ONCE ──► still invalid ──► AnalysisFailed (502)
+   │
+   ▼ VALID
+4. is_logo = false? ──yes──► NotALogo  "Please upload a valid logo image."
+   │ no
+   ▼
+5. Build 11 results (in fixed order, from parameters.py)
+   │     for each parameter:
+   │       • name + plain explanation   ← from parameters.py, not from the AI
+   │       • score rounded half-up       (8.25 → 8.3)
+   │       • positives / negatives       (max 3 each)
+   │       • Typography / Legibility on a logo with NO text → N/A (score null)
+   ▼
+6. scoring.py        overall_score = average of applicable scores
+   │                 (backend calculates it; any "overall" from the AI is ignored)
+   ▼
+LogoAnalysis
+   { is_logo: true, overall_score: 6.4, parameters: [11 items], similarity: {...} }

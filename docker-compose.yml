@@ -1,0 +1,9 @@
+# Local development: runs the backend container.
+# Frontend runs separately with `npm run dev` (deployed to static hosting).
+# Finalized in the main-entry-point / deployment phase.
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"

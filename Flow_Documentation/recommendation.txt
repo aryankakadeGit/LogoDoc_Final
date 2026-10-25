@@ -1,0 +1,61 @@
+Dashboard shows analysis
+        │
+        ▼
+"How was this logo created?"
+        │
+        │  frontend sends the SAME analysis back
+        ▼
+LogoAnalysis re-checked by backend          ← analysis/schemas.py
+   • all 11 parameters, in order
+   • scores 0–10, text lengths capped
+   • names, explanations, overall score RECALCULATED (tampering useless)
+        │
+        ▼
+shared.summarize()                          ← NO AI
+   • improve = score < 7, weakest first
+       (nothing below 7? → 2 lowest as "fine-tune")
+   • keep    = score ≥ 8, strongest first
+   • N/A parameters skipped
+        │
+        ▼
+shared.summary_text()
+   <logo_analysis>
+   Logo: A blue rounded tile with a white monogram beside a bold black ECOOPEX wordmark.
+   Overall score: 6.9/10
+   Areas to improve (weakest first):
+   - Distinctiveness [distinctiveness] (5.5/10)
+     Problems: ...   Working well: ...
+   Strengths to preserve:
+   - Legibility (8.5/10): ...
+   </logo_analysis>
+        │
+        ├──────────── "AI Generated" ─────────────┐
+        │                                          ▼
+        │                         ai_generated.generate_improved_prompt()
+        │                                  1 text-only AI call (no image)
+        │                                          │
+        │                                          ▼
+        │                         ImprovedPrompt { prompt: "A flat vector logo ..." }
+        │                                          │
+        │                                          ▼
+        │                         UI: big text box + [Use This Prompt] / copy
+        │
+        └──────────── "Manually Designed" ────────┐
+                                                   ▼
+                              manual_design.generate_designer_recommendations()
+                                       1 text-only AI call (no image)
+                                                   │
+                                                   ▼
+                              DesignerRecommendations
+                                { recommendations: [ per weak parameter:
+                                    problem / why_it_matters / suggestion / preserve ],
+                                  overall: [3–5 points] }
+                                                   │
+                                                   ▼
+                              UI shows them + [Download Designer Recommendations]
+                                                   │
+                                                   ▼
+                              build_txt(analysis, recommendations)   ← NO AI
+                                                   │
+                                                   ▼
+                              designer-recommendations.txt

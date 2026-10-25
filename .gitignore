@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.coverage
+
+# Node
+node_modules/
+dist/
+
+# Env / secrets
+.env
+*.env.local
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# TypeScript build cache
+*.tsbuildinfo

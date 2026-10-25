@@ -1,0 +1,66 @@
+Frontend request
+   │
+   ▼
+router.py  ── all URLs start with /api
+   │
+   ├── GET /api/health ─────────────────────────────────────────► 200 {"status":"ok"}   (no AI)
+   │
+   ├── POST /api/logo/analyze   (body = the logo file)
+   │      │
+   │      ▼
+   │   1. rate_limit.py        too many from this IP? ──────────► 429 RATE_LIMITED
+   │      ▼
+   │   2. _read_body()         bigger than 5 MB? (stops early) ─► 413 FILE_TOO_LARGE
+   │      │                    kept in memory only, never on disk
+   │      ▼
+   │   3. prepare_image()      empty / wrong type / broken / ──► 400 / 415 / 422
+   │      │  (upload module,    unsafe SVG
+   │      │   in a thread)
+   │      ▼
+   │   4. analyze_logo()       AI busy / quota / bad answer ──► 503 / 429 / 502
+   │      │  (1 AI call + image)
+   │      ▼
+   │   5. not a logo? ─────────────────────────────────────────► 200 {is_logo:false, message}
+   │      │
+   │      ▼
+   │   6. get_logo_status()    (no AI)
+   │      ▼
+   │   200 {is_logo:true, analysis, logo_status}
+   │
+   ├── POST /api/logo/recommendations/ai-prompt   {analysis}
+   │      │
+   │      ▼
+   │   1. rate_limit.py (own counter) ─────────────────────────► 429 RATE_LIMITED
+   │   2. re-check analysis, recalc scores ──── invalid ──────► 422 INVALID_REQUEST
+   │   3. generate_improved_prompt()  (1 text AI call)
+   │      ▼
+   │   200 {prompt}
+   │
+   ├── POST /api/logo/recommendations/designer    {analysis}
+   │      │
+   │      ▼
+   │   1. rate_limit.py (own counter) ─────────────────────────► 429 RATE_LIMITED
+   │   2. re-check analysis, recalc scores ──── invalid ──────► 422 INVALID_REQUEST
+   │   3. generate_designer_recommendations()  (1 text AI call)
+   │      ▼
+   │   200 {recommendations, overall}
+   │
+   └── POST /api/logo/recommendations/designer/download   {analysis, recommendations}
+          │  (no rate limit, no AI)
+          ▼
+       1. re-check both ─────────────────── invalid ──────────► 422 INVALID_REQUEST
+       2. build_txt()
+          ▼
+       200 designer-recommendations.txt  (download)
+
+
+Any error from any step
+   │
+   ▼
+error_handlers.py
+   ├── our errors (FileTooLarge, AIUnavailable, RateLimited…) → their own code/status
+   ├── bad JSON / missing fields                              → 422 INVALID_REQUEST
+   ├── wrong URL / wrong method                               → 404 / 405
+   └── unexpected crash                                       → 500 INTERNAL_ERROR (no details leaked)
+   ▼
+{ "error": { "code": "...", "message": "..." } }

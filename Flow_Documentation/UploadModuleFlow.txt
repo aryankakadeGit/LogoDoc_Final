@@ -1,0 +1,53 @@
+User's file (bytes)
+   │
+   ▼
+1. file_validator.py   → Is it empty? Too big? What type is it really? we accept only PNG, JPG, WebP and SVG. Anything else is rejected.
+   │
+   ├── PNG / JPG / WebP ──────────────────────────┐
+   │                                              │
+   └── SVG                                        │
+        ▼                                         │
+2. svg_sanitizer.py   → Is this SVG safe?         │
+        ▼                                         │
+3. svg_rasterizer.py  → Draw the SVG as a PNG     │
+        │                                         │
+        ▼                                         ▼
+4. image_normalizer.py → Open it fully, clean it, resize it, save as PNG
+   │
+   ▼
+PreparedImage (png_bytes, width, height, source_format)  → goes to the AI later
+
+
+
+Each step in simple words
+
+1. Check the file (file_validator.py)
+
+Rejects the file if it's empty.
+Rejects the file if it's over the size limit (5 MB).
+Finds the real type by reading the first few bytes of the file, not the filename. A virus renamed to logo.png is still caught.
+Accepts only PNG, JPG, WebP and SVG. Anything else is rejected.
+
+2. Make SVGs safe (svg_sanitizer.py)
+An SVG is really a text file of code, so it can hide tricks.
+
+It's read with a safe reader (defusedxml) that blocks known XML attacks:
+an "XML bomb", which expands until memory runs out
+a hidden instruction to read files on the server
+It rejects the SVG if it tries to load anything from outside: a website link, a file on the computer, or outside CSS.
+Internal links inside the SVG (like #gradient1) are allowed, because they're normal.
+
+3. Turn the SVG into a picture (svg_rasterizer.py)
+
+It uses resvg to draw the SVG as a PNG, sized to fit inside 2048 × 2048 with the same shape.
+Example: your Google icon is square, so it became 2048 × 2048.
+
+4. Clean the image (image_normalizer.py)
+
+It blocks "pixel bombs": small files that claim to be enormous images, checked before the image is fully opened.
+It opens the image fully, so broken or half-downloaded files are caught here.
+It fixes phone-photo rotation.
+It removes hidden metadata (camera info, GPS location) for privacy.
+It keeps transparency only if the logo has it.
+It shrinks big images to a maximum of 2048 px but never enlarges small ones.
+It always saves the result as PNG.
